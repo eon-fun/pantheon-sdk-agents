@@ -1,6 +1,6 @@
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from pydantic import BaseModel
 

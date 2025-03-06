@@ -1,28 +1,27 @@
 from collections.abc import Sequence
-from contextlib import asynccontextmanager
 from typing import Any
 from urllib.parse import urljoin
 
 import requests
-from fastapi import FastAPI
 
+from base_agent import abc
+from base_agent.bootstrap import bootstrap_main
 from base_agent.config import get_agent_config
-from base_agent.langchain import agent_executor
-from base_agent.langchain.executor import LangChainExecutor
+from base_agent.langchain import executor_builder
 from base_agent.models import AgentModel, Task, ToolModel
 from base_agent.prompt import prompt_builder
-from base_agent.prompt.builder import PromptBuilder
 from base_agent.workflows.runner import dag_runner
 
 
-class BaseAgent:
-    prompt_builder: PromptBuilder
-    agent_executor: LangChainExecutor
+class BaseAgent(abc.AbstractAgent):
+    """Base default implementation for all agents."""
+
+    prompt_builder: abc.AbstractPromptBuilder
+    agent_executor: abc.AbstractExecutor
 
     def __init__(self, *args, **kwargs):
-        self.config = get_agent_config()
         self.dag_runner = dag_runner()
-        self.agent_executor = agent_executor()
+        self.agent_executor = executor_builder()
         self.prompt_builder = prompt_builder()
 
     def handle(self, goal: str, plan: dict | None = None):
@@ -66,7 +65,7 @@ class BaseAgent:
                             },
                         },
                     },
-                }
+                },
             ),
             ToolModel(
                 name="return-answer-tool",
@@ -130,21 +129,4 @@ class BaseAgent:
 
 
 def agent_builder(args: dict):
-    from ray import serve
-
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        # launch some tasks on app start
-        yield
-        # handle clean up
-
-    app = FastAPI(lifespan=lifespan)
-
-    @serve.deployment
-    @serve.ingress(app)
-    class Agent(BaseAgent):
-        @app.post("/{goal}")
-        async def handle(self, goal: str, plan: dict | None = None):
-            return super().handle(goal, plan)
-
-    return Agent.bind(**args)
+    return bootstrap_main(BaseAgent).bind(config=get_agent_config(**args))
