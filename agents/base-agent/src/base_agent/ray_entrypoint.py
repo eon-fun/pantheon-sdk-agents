@@ -1,31 +1,32 @@
 from collections.abc import Sequence
-from contextlib import asynccontextmanager
 from typing import Any
 from urllib.parse import urljoin
 
 import requests
-from fastapi import FastAPI
 
-from base_agent.config import get_agent_config
-from base_agent.langchain import agent_executor
-from base_agent.langchain.executor import LangChainExecutor
+from base_agent import abc
+from base_agent.bootstrap import bootstrap_main
+from base_agent.config import BasicAgentConfig, get_agent_config
+from base_agent.langchain import executor_builder
 from base_agent.models import AgentModel, Task, ToolModel
 from base_agent.prompt import prompt_builder
-from base_agent.prompt.builder import PromptBuilder
-from base_agent.workflows.runner import dag_runner
+from base_agent.workflows import workflow_builder
 
 
-class BaseAgent:
-    prompt_builder: PromptBuilder
-    agent_executor: LangChainExecutor
+class BaseAgent(abc.AbstractAgent):
+    """Base default implementation for all agents."""
 
-    def __init__(self, *args, **kwargs):
-        self.config = get_agent_config()
-        self.dag_runner = dag_runner()
-        self.agent_executor = agent_executor()
+    workflow_runner: abc.AbstractWorkflowRunner
+    prompt_builder: abc.AbstractPromptBuilder
+    agent_executor: abc.AbstractExecutor
+
+    def __init__(self, config: BasicAgentConfig, *args, **kwargs):
+        self.config = config
+        self.workflow_runner = workflow_builder()
+        self.agent_executor = executor_builder()
         self.prompt_builder = prompt_builder()
 
-    def handle(self, goal: str, plan: dict | None = None):
+    async def handle(self, goal: str, plan: dict | None = None):
         """This is one of the most important endpoint of MAS.
         It handles all requests made by handoff from other agents or by user."""
 
@@ -66,11 +67,11 @@ class BaseAgent:
                             },
                         },
                     },
-                }
+                },
             ),
             ToolModel(
                 name="return-answer-tool",
-                version="0.1.0",
+                version="0.1.2",
                 openai_function_spec={
                     "type": "function",
                     "function": {
@@ -105,46 +106,24 @@ class BaseAgent:
         self, goal: str, agents: Sequence[AgentModel], tools: Sequence[ToolModel], plan: dict | None = None
     ):
         """This method is used to generate a plan for the given goal."""
-        prompt = self.prompt_builder.generate_plan_prompt(
-            final_answer_tool_name=self.config.final_answer_tool_name,
-            # handoff_tool_name=self.config.handoff_tool_name
-        )
-
         return self.agent_executor.generate_plan(
-            prompt,
+            self.prompt_builder.generate_plan_prompt(system_prompt=self.config.system_prompt),
             available_functions=tools,
             available_agents=agents,
             goal=goal,
         )
 
     def run_workflow(self, plan: dict[int, Task]):
-        return self.dag_runner.run(plan)
+        return self.workflow_runner.run(plan)
 
     def reconfigure(self, config: dict[str, Any]):
         pass
 
-    def handoff(self, endpoint: str, goal: str, plan: dict):
+    async def handoff(self, endpoint: str, goal: str, plan: dict):
         """This method means that agent can't find a solution (wrong route/wrong plan/etc)
         and decide to handoff the task to another agent."""
         return requests.post(urljoin(endpoint, goal), json=plan).json()
 
 
 def agent_builder(args: dict):
-    from ray import serve
-
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        # launch some tasks on app start
-        yield
-        # handle clean up
-
-    app = FastAPI(lifespan=lifespan)
-
-    @serve.deployment
-    @serve.ingress(app)
-    class Agent(BaseAgent):
-        @app.post("/{goal}")
-        async def handle(self, goal: str, plan: dict | None = None):
-            return super().handle(goal, plan)
-
-    return Agent.bind(**args)
+    return bootstrap_main(BaseAgent).bind(config=get_agent_config(**args))
