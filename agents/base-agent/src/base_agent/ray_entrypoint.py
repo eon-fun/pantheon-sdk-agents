@@ -5,12 +5,12 @@ from urllib.parse import urljoin
 import requests
 
 from base_agent import abc
-from base_agent.ai_registry import ai_registry_client
+from base_agent.ai_registry import ai_registry_builder
 from base_agent.bootstrap import bootstrap_main
 from base_agent.config import BasicAgentConfig, get_agent_config
-from base_agent.domain_knowledge import light_rag_client
+from base_agent.domain_knowledge import light_rag_builder
 from base_agent.langchain import executor_builder
-from base_agent.memory import memory_client
+from base_agent.memory import memory_builder
 from base_agent.models import AgentModel, GoalModel, InsightModel, MemoryModel, QueryData, Task, ToolModel
 from base_agent.prompt import prompt_builder
 from base_agent.workflows import workflow_builder
@@ -30,13 +30,13 @@ class BaseAgent(abc.AbstractAgent):
         self.prompt_builder = prompt_builder()
 
         # ---------- AI Registry ----------#
-        self.ai_registry_client = ai_registry_client()
+        self.ai_registry_client = ai_registry_builder()
 
         # ---------- LightRAG Memory -------#
-        self.lightrag_client = light_rag_client()
+        self.lightrag_client = light_rag_builder()
 
         # ---------- Redis Memory ----------#
-        self.memory_client = memory_client()
+        self.memory_client = memory_builder()
 
     async def handle(self, goal: str, plan: dict | None = None):
         """This is one of the most important endpoint of MAS.
