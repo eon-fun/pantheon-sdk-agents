@@ -26,7 +26,8 @@ class ToolModel(BaseModel):
 class MemoryModel(BaseModel):
     goal: str
     plan: dict
-    result: str
+    result: dict
+    context: dict | None = Field(default=None, description="Used when plan is provided")
 
 
 class AgentModel(BaseModel):
