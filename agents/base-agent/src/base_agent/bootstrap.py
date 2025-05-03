@@ -1,43 +1,27 @@
 from contextlib import asynccontextmanager
-from typing import Any
 
 from fastapi import FastAPI
-from ray.serve.deployment import Deployment
 
 from base_agent import abc
-from base_agent.orchestration import workflow_builder
 
 
-def bootstrap_main(agent_cls: type[abc.AbstractAgent]) -> type[Deployment]:
+def bootstrap_main(agent_cls: type[abc.AbstractAgent]) -> type[abc.AbstractAgent]:
     """Bootstrap a main agent with the necessary components to be able to run as a Ray Serve deployment."""
     from ray import serve
-
-    runner: abc.AbstractWorkflowRunner = workflow_builder()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         # launch some tasks on app start
-        runner.start_daemon()
-        runner.run_background_workflows()
         yield
-        runner.stop_daemon()
         # handle clean up
 
-    fastapi = FastAPI(lifespan=lifespan)
+    app = FastAPI(lifespan=lifespan)
 
     @serve.deployment
-    @serve.ingress(fastapi)
+    @serve.ingress(app)
     class Agent(agent_cls):
-        @property
-        def workflow_runner(self):
-            return runner
-
-        @fastapi.post("/{goal}")
-        async def handle(self, goal: str, plan: dict | None = None, context: Any = None):
-            return await super().handle(goal, plan, context)
-
-        @fastapi.get("/workflows")
-        async def list_workflows(self, status: str | None = None):
-            return await self.workflow_runner.list_workflows(status)
+        @app.post("/{goal}")
+        async def handle(self, goal: str, plan: dict | None = None):
+            return await super().handle(goal, plan)
 
     return Agent
