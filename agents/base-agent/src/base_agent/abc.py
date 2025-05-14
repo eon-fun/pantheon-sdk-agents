@@ -9,14 +9,16 @@ from base_agent.models import AgentModel, Task, ToolModel
 
 class AbstractAgentInputModel(pydantic.BaseModel):
     """Abstract interface for agent intput model"""
-
     ...
 
 
 class AbstractAgentOutputModel(pydantic.BaseModel):
     """Abstract interface for agennt output model"""
-
     ...
+
+class AbstractChatResponse(pydantic.BaseModel):
+    response_text: str
+    action: str | None = None
 
 
 class AbstractExecutor(ABC):
@@ -32,6 +34,32 @@ class AbstractExecutor(ABC):
 
         Returns:
             A dictionary mapping step IDs to Task objects representing the plan
+        """
+        pass
+
+    @abstractmethod
+    def chat(self, prompt: Any, **kwargs) -> AbstractChatResponse:
+        """Generate a chat response based on a prompt and additional parameters.
+
+        Args:
+            prompt: The prompt to use for further chat conversation
+            **kwargs: Additional parameters to use in chatting
+
+        Returns:
+            An instance of AbstractChatResponse
+        """
+        pass
+
+    @abstractmethod
+    def classify_intent(self, prompt: Any, **kwargs) -> str:
+        """Classifies user intent based on a prompt and additional parameters.
+
+        Args:
+            prompt: The prompt to use for intent classification
+            **kwargs: Additional parameters to use in chatting
+
+        Returns:
+            An str with intent
         """
         pass
 
@@ -51,6 +79,33 @@ class AbstractPromptBuilder(ABC):
             A prompt object that can be used by an executor
         """
         pass
+
+    @abstractmethod
+    def generate_chat_prompt(self, *args, **kwargs) -> Any:
+        """Generate a prompt for chat.
+
+        Args:
+            *args: Positional arguments for prompt generation
+            **kwargs: Keyword arguments for prompt generation
+
+        Returns:
+            A prompt object that can be used by an executor
+        """
+        pass
+
+
+    @abstractmethod
+    def generate_intent_classifier_prompt(self, *args, **kwargs) -> Any:
+        """Generat a prompt for intent classification
+        Args:
+            *args: Positional arguments for prompt generation
+            **kwargs: Keyword arguments for prompt generation
+
+        Returns:
+            A prompt object that can be used by an executor
+        """
+
+
 
 
 class AbstractWorkflowRunner(ABC):

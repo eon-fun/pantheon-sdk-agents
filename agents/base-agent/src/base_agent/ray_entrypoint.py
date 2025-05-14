@@ -4,12 +4,12 @@ from urllib.parse import urljoin
 
 import requests
 
-from base_agent import abc
+from base_agent import abc, const
 from base_agent.ai_registry import ai_registry_builder
 from base_agent.bootstrap import bootstrap_main
 from base_agent.config import BasicAgentConfig, get_agent_config
 from base_agent.domain_knowledge import light_rag_builder
-from base_agent.langchain import executor_builder
+from base_agent.langchain import executor, executor_builder
 from base_agent.memory import memory_builder
 from base_agent.models import AgentModel, GoalModel, InsightModel, MemoryModel, QueryData, Task, ToolModel
 from base_agent.prompt import prompt_builder
@@ -207,7 +207,7 @@ class BaseAgent(abc.AbstractAgent):
         past_interactions: Sequence[MemoryModel],
         insights: Sequence[InsightModel],
         plan: dict | None = None,
-    ):
+    ) -> dict[int, Task]:
         """This method is used to generate a plan for the given goal."""
         return self.agent_executor.generate_plan(
             self.prompt_builder.generate_plan_prompt(system_prompt=self.config.system_prompt),
@@ -217,6 +217,46 @@ class BaseAgent(abc.AbstractAgent):
             past_interactions=past_interactions,
             insights=insights,
             plan=plan,
+        )
+
+    def chat(
+        self,
+        user_prompt: str,
+        action: str | None,
+        context: list[str],
+    ) -> executor.ChatResponse:
+
+        if action == const.Intents.CHANGE_SETTINGS:
+            ...
+
+        if action == const.Intents.ADD_KNOWLEDGE:
+            ...
+
+        if action is None:
+            intent = self.agent_executor.classify_intent(
+                prompt=self.prompt_builder.generate_intent_classifier_prompt(
+                    system_prompt=self.config.system_prompt,
+                    user_prompt=user_prompt,
+                )
+            )
+            if intent == const.Intents.CHANGE_SETTINGS:
+                return executor.ChatResponse(
+                    response_text=const.ExtraQuestions.WHICH_SETTINGS,
+                    action=const.Intents.CHANGE_SETTINGS,
+                )
+            if intent == const.Intents.ADD_KNOWLEDGE:
+                return executor.ChatResponse(
+                    response_text=const.ExtraQuestions.WHAT_INFO,
+                    action=const.Intents.ADD_KNOWLEDGE,
+                )
+        # Final case: the action is const.Intents.CHIT_CHAT or intent is const.Intents.CHIT_CHAT
+        # TODO: transform context (maximum 10 messages into one string)
+        return self.agent_executor.chat(
+            prompt=self.prompt_builder.generate_chat_prompt(
+                system_prompt=self.config.system_prompt,
+                user_prompt=user_prompt,
+                context=context,
+            )
         )
 
     def run_workflow(
@@ -233,6 +273,9 @@ class BaseAgent(abc.AbstractAgent):
         """This method means that agent can't find a solution (wrong route/wrong plan/etc)
         and decide to handoff the task to another agent."""
         return requests.post(urljoin(endpoint, goal), json=plan).json()
+
+
+
 
 
 def agent_builder(args: dict):
