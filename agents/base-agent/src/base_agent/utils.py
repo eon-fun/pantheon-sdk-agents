@@ -22,7 +22,9 @@ def get_entrypoint(
     try:
         return entrypoints.select(name=target_entrypoint)[0]
     except (KeyError, IndexError):
-        return entrypoints.select(name=default_entrypoint)[0]
+        found = [ep for ep in entrypoints if ep.name == default_entrypoint]
+        if found:
+            return found[0]
 
 
 def default_stringify_rule_for_arguments(args):

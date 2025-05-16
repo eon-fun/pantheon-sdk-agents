@@ -42,7 +42,7 @@ class DAGRunner:
 
         return get_tool_entrypoint_wrapper
 
-    def run(self, dag_spec: dict[int, Task]) -> Any:
+    def run(self, dag_spec: dict[int, Task], context: str | None) -> Any:
         """Runs the DAG using Ray Workflows"""
         # Create remote functions for each step
         for _step_id, task in dag_spec.items():

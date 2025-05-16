@@ -9,12 +9,15 @@ from base_agent.models import AgentModel, Task, ToolModel
 
 class AbstractAgentInputModel(pydantic.BaseModel):
     """Abstract interface for agent intput model"""
+
     ...
 
 
 class AbstractAgentOutputModel(pydantic.BaseModel):
     """Abstract interface for agennt output model"""
+
     ...
+
 
 class AbstractChatResponse(pydantic.BaseModel):
     response_text: str
@@ -38,7 +41,7 @@ class AbstractExecutor(ABC):
         pass
 
     @abstractmethod
-    def chat(self, prompt: Any, **kwargs) -> AbstractChatResponse:
+    def chat(self, prompt: Any, **kwargs) -> str:
         """Generate a chat response based on a prompt and additional parameters.
 
         Args:
@@ -46,7 +49,7 @@ class AbstractExecutor(ABC):
             **kwargs: Additional parameters to use in chatting
 
         Returns:
-            An instance of AbstractChatResponse
+            An str with response
         """
         pass
 
@@ -93,7 +96,6 @@ class AbstractPromptBuilder(ABC):
         """
         pass
 
-
     @abstractmethod
     def generate_intent_classifier_prompt(self, *args, **kwargs) -> Any:
         """Generat a prompt for intent classification
@@ -104,8 +106,6 @@ class AbstractPromptBuilder(ABC):
         Returns:
             A prompt object that can be used by an executor
         """
-
-
 
 
 class AbstractWorkflowRunner(ABC):
@@ -189,6 +189,14 @@ class AbstractAgent(ABC):
         Returns:
             A dictionary mapping step IDs to Task objects representing the plan
         """
+        pass
+
+    @abstractmethod
+    def chat(
+        self,
+        user_prompt: str,
+        **kwargs,
+    ) -> AbstractChatResponse:
         pass
 
     @abstractmethod

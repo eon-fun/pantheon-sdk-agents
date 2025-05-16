@@ -1,6 +1,11 @@
+import os
+
 from base_agent.const import EntrypointGroup
+from base_agent.models import ChatRequest
 from base_agent.utils import get_entrypoint
 from ray import serve
+
+os.environ["OPENAI_API_KEY"]= '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'
 
 app = get_entrypoint(EntrypointGroup.AGENT_ENTRYPOINT).load()
 
@@ -13,6 +18,12 @@ if __name__ == "__main__":
     handle = serve.run(app({}), route_prefix="/", _local_testing_mode=True)
 
     fastapi_app = FastAPI()
+
+
+    @fastapi_app.post("/chat")
+    async def chat_with_agent(payload: ChatRequest):
+        return await handle.chat.remote(payload.message, payload.action, payload.session_uuid)
+
 
     @fastapi_app.post("/{goal}")
     async def handle_request(goal: str, plan: dict | None = None):
