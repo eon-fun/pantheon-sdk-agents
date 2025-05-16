@@ -4,7 +4,7 @@ from typing import Any
 
 import pydantic
 
-from base_agent.models import AgentModel, Task, ToolModel
+from base_agent.models import AgentModel, ToolModel, Workflow
 
 
 class AbstractAgentCard(pydantic.BaseModel):
@@ -47,7 +47,7 @@ class AbstractExecutor(ABC):
     """Abstract interface for agent execution engines."""
 
     @abstractmethod
-    def generate_plan(self, prompt: Any, **kwargs) -> dict[int, Task]:
+    def generate_plan(self, prompt: Any, **kwargs) -> Workflow:
         """Generate a plan based on a prompt and additional parameters.
 
         Args:
@@ -83,7 +83,7 @@ class AbstractWorkflowRunner(ABC):
     @abstractmethod
     def run(
         self,
-        plan: dict[int, Task],
+        plan: Workflow,
         context: AbstractAgentInputModel | None = None,
     ) -> AbstractAgentOutputModel:
         """Execute a workflow plan.
@@ -115,13 +115,12 @@ class AbstractWorkflowRunner(ABC):
 
     @abstractmethod
     async def list_workflows(self, *args, **kwargs) -> None:
-        """List all workflows in the workflow runner engine."""
-        pass
+         """List all workflows in the workflow runner engine."""
+         pass
 
     @abstractmethod
     def reconfigure(self, config: dict[str, Any]) -> None:
         """Reconfigure the agent with new settings.
-
         Args:
             config: New configuration settings
         """
@@ -134,7 +133,7 @@ class AbstractAgent(ABC):
     async def handle(
         self,
         goal: str,
-        plan: dict[int, Task] | None = None,
+        plan: Workflow | None = None,
         context: AbstractAgentInputModel | None = None,
     ) -> AbstractAgentOutputModel:
         """Handle an incoming request.
@@ -176,7 +175,7 @@ class AbstractAgent(ABC):
     @abstractmethod
     def generate_plan(
         self, goal: str, agents: Sequence[AgentModel], tools: Sequence[ToolModel], plan: dict | None = None
-    ) -> dict[int, Task]:
+    ) -> Workflow:
         """Generate a plan for achieving a goal.
 
         Args:
@@ -191,7 +190,7 @@ class AbstractAgent(ABC):
         pass
 
     @abstractmethod
-    def run_workflow(self, plan: dict[int, Task]) -> Any:
+    def run_workflow(self, plan: Workflow) -> Any:
         """Execute a workflow plan.
 
         Args:
