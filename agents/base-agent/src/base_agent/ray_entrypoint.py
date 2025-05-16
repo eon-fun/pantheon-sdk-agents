@@ -12,8 +12,10 @@ from base_agent.domain_knowledge import light_rag_builder
 from base_agent.langchain import executor_builder
 from base_agent.models import (
     AgentModel,
+    GoalModel,
     InsightModel,
     MemoryModel,
+    QueryData,
     ToolModel,
     Workflow,
 )
