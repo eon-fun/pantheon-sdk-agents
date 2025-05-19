@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from logging import getLogger
 from typing import Any
 from urllib.parse import urljoin
 
@@ -8,16 +9,24 @@ from ray.serve.deployment import Application
 from base_agent import abc
 from base_agent.ai_registry import ai_registry_builder
 from base_agent.bootstrap import bootstrap_main
+from base_agent.card.models import AgentCard
 from base_agent.config import BasicAgentConfig, get_agent_config
+from base_agent.domain_knowledge import light_rag_builder
 from base_agent.langchain import executor_builder
+from base_agent.memory import memory_builder
 from base_agent.models import (
     AgentModel,
+    GoalModel,
+    HandoffParamsModel,
     InsightModel,
     MemoryModel,
+    QueryData,
     ToolModel,
     Workflow,
 )
 from base_agent.prompt import prompt_builder
+
+logger = getLogger(__name__)
 
 
 class BaseAgent(abc.AbstractAgent):
@@ -36,10 +45,10 @@ class BaseAgent(abc.AbstractAgent):
         self.ai_registry_client = ai_registry_builder()
 
         # ---------- LightRAG Memory -------#
-        # self.lightrag_client = light_rag_builder()
+        self.lightrag_client = light_rag_builder()
 
         # ---------- Redis Memory ----------#
-        # self.memory_client = memory_builder()
+        self.memory_client = memory_builder()
 
     async def handle(
         self,
@@ -56,13 +65,13 @@ class BaseAgent(abc.AbstractAgent):
 
         if plan is not None and plan:
             result = self.run_workflow(plan, context)
-            # self.store_interaction(goal, plan, result, context)
+            self.store_interaction(goal, plan, result, context)
             return result
 
         insights = self.get_relevant_insights(goal)
         past_interactions = self.get_past_interactions(goal)
         agents = self.get_most_relevant_agents(goal)
-        tools = self.get_most_relevant_tools(goal)
+        tools = self.get_most_relevant_tools(goal, agents)
 
         plan = self.generate_plan(
             goal=goal,
@@ -74,12 +83,12 @@ class BaseAgent(abc.AbstractAgent):
         )
 
         result = self.run_workflow(plan, context)
-        # self.store_interaction(goal, plan, result, context)
-        return result
+        self.store_interaction(goal, plan, result, context)
+        # return result
 
     def get_past_interactions(self, goal: str) -> list[dict]:
-        # return self.memory_client.read(key=goal)
-        return [{}]
+        return self.memory_client.read(key=goal)
+        # return [{}]
 
     def store_interaction(
         self,
@@ -96,128 +105,77 @@ class BaseAgent(abc.AbstractAgent):
                 "context": context.model_dump(),
             }
         )
-        # self.memory_client.store(key=goal, interaction=interaction.model_dump())
+        self.memory_client.store(key=goal, interaction=interaction.model_dump())
 
     def get_relevant_insights(self, goal: str) -> list[InsightModel]:
         """Retrieve relevant insights from LightRAG memory for the given goal."""
-        # response = self.lightrag_client.query(query=goal)
-        # return [InsightModel(**response)]
-        return []
+        response = self.lightrag_client.query(query=goal)
+        return [InsightModel(**response)]
+        # return []
 
     def get_most_relevant_agents(self, goal: str) -> list[AgentModel]:
         """This method is used to find the most useful agents for the given goal."""
-        # response = self.ai_registry_client.post(
-        #     endpoint=self.ai_registry_client.endpoints.find_agents,
-        #     json=QueryData(goal=goal).model_dump(),
-        # )
+        response = self.ai_registry_client.post(
+            endpoint=self.ai_registry_client.endpoints.find_agents,
+            json=QueryData(goal=goal).model_dump(),
+        )
 
-        # if not response:
-        #     return []
+        if not response:
+            return []
 
-        # return [AgentModel(**agent) for agent in response]
-        return []
+        return [AgentModel(**agent) for agent in response]
+        # return [AgentModel(
+        #     name = 'example-agent',
+        #     description = 'This is an agent to handoff the any goal',
+        #     version = '0.1.0'
+        # )]
 
-    def get_most_relevant_tools(self, goal: str) -> list[ToolModel]:
+    def get_most_relevant_tools(self, goal: str, agents: list[AgentModel]) -> list[ToolModel]:
         """
         This method is used to find the most useful tools for the given goal.
 
-        Example:
-
-        return [
-            ToolModel(
-                name="handoff-tool",
-                version="0.1.0",
-                openai_function_spec={
-                    "type": "function",
-                    "function": {
-                        "name": "handoff_tool",
-                        "description": "A tool that returns the string passed in as an output.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "agent": {"type": "string", "description": "The name of the agent to use.", "enum": []},
-                                "goal": {"type": "string", "description": "The goal to achieve."},
-                            },
-                            "required": ["agent", "goal"],
-                        },
-                        "output": {
-                            "type": "object",
-                            "properties": {
-                                "result": {"type": "string", "description": "The result returned by the agent."}
-                            },
-                        },
-                    },
-                },
-            ),
-            ToolModel(
-                name="return-answer-tool",
-                version="0.1.2",
-                openai_function_spec={
-                    "type": "function",
-                    "function": {
-                        "name": "return_answer_tool",
-                        "description": "Returns the input as output.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "answer": {
-                                    "type": "string",
-                                    "description": "The answer in JSON string.",
-                                    "default": '{"result": 42}',
-                                }
-                            },
-                            "required": ["answer"],
-                        },
-                        "output": {
-                            "type": "object",
-                            "properties": {
-                                "result": {
-                                    "type": "string",
-                                    "description": "Returns the input as output in JSON string.",
-                                }
-                            },
-                        },
-                    },
-                },
-            ),
-        ]
         """
-        # response = self.ai_registry_client.post(
-        #     endpoint=self.ai_registry_client.endpoints.find_tools,
-        #     json=GoalModel(goal=goal).model_dump(),
-        # )
+        response = self.ai_registry_client.post(
+            endpoint=self.ai_registry_client.endpoints.find_tools,
+            json=GoalModel(goal=goal).model_dump(),
+        )
+        tools = [ToolModel(**tool) for tool in response]
 
-        # if not response:
-        #     return []
+        for agent in agents:
+            card_url = urljoin(agent.endpoint, "/card")
+            try:
+                resp = requests.get(card_url)
+                resp.raise_for_status()
 
-        # return [ToolModel(**tool) for tool in response]
-
-        return [
-            ToolModel(
-                name="handoff-tool",
-                version="0.1.0",
-                openai_function_spec={
+                data = resp.json()
+                card = AgentCard(**data)
+            except Exception as e:
+                logger.warning(f"Failed to fetch card from agent {agent} at {card_url}: {e}")
+                continue
+            for skill in card.skills:
+                func_name = f"{agent.name}_{skill.id}".replace("-", "_")
+                spec = {
                     "type": "function",
                     "function": {
-                        "name": "handoff_tool",
-                        "description": "A tool that returns the string passed in as an output.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "agent": {"type": "string", "description": "The name of the agent to use.", "enum": []},
-                                "goal": {"type": "string", "description": "The goal to achieve."},
-                            },
-                            "required": ["agent", "goal"],
-                        },
-                        "output": {
-                            "type": "object",
-                            "properties": {
-                                "result": {"type": "string", "description": "The result returned by the agent."}
-                            },
-                        },
+                        "name": func_name,
+                        "description": skill.description,
+                        "parameters": skill.input_model.model_json_schema(),
+                        "output": skill.output_model.model_json_schema(),
                     },
-                },
-            ),
+                }
+                tools.append(
+                    ToolModel(
+                        name="handoff-tool",
+                        version="0.1.0",
+                        default_parameters=HandoffParamsModel(
+                            endpoint=agent.endpoint, path=skill.path, method=skill.method
+                        ).model_dump(),
+                        parameters_spec=skill.params_model.model_json_schema(),
+                        openai_function_spec=spec,
+                    )
+                )
+
+        return tools + [
             ToolModel(
                 name="return-answer-tool",
                 version="0.1.2",

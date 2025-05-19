@@ -5,8 +5,8 @@ from fastapi import FastAPI
 from ray.serve.deployment import Deployment
 
 from base_agent import abc
-from base_agent.orchestration import workflow_builder
 from base_agent.card import card_builder
+from base_agent.orchestration import workflow_builder
 
 
 def bootstrap_main(agent_cls: type[abc.AbstractAgent]) -> type[Deployment]:
@@ -25,10 +25,10 @@ def bootstrap_main(agent_cls: type[abc.AbstractAgent]) -> type[Deployment]:
         runner.stop_daemon()
         # handle clean up
 
-    fastapi = FastAPI(lifespan=lifespan)
+    app = FastAPI(lifespan=lifespan)
 
     @serve.deployment
-    @serve.ingress(fastapi)
+    @serve.ingress(app)
     class Agent(agent_cls):
         @property
         def workflow_runner(self):
@@ -38,15 +38,15 @@ def bootstrap_main(agent_cls: type[abc.AbstractAgent]) -> type[Deployment]:
         def agent_card(self):
             return card
 
-        @fastapi.post("/card")
+        @app.get("/card")
         async def get_card(self):
             return self.agent_card
 
-        @fastapi.get("/workflows")
+        @app.get("/workflows")
         async def list_workflows(self, status: str | None = None):
             return await self.workflow_runner.list_workflows(status)
 
-        @fastapi.post("/{goal}")
+        @app.post("/{goal}")
         async def handle(self, goal: str, plan: dict | None = None, context: Any = None):
             return await super().handle(goal, plan, context)
 

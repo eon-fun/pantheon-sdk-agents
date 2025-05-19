@@ -1,12 +1,14 @@
 import uuid
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
 
 class ToolModel(BaseModel):
     name: str
     version: str | None = None
+    default_parameters: dict[str, Any] | None = Field(default_factory=dict)
+    parameters_spec: dict[str, Any] | None = Field(default_factory=dict)
     openai_function_spec: dict[str, Any]
 
     @model_validator(mode="before")
@@ -38,6 +40,7 @@ class ToolModel(BaseModel):
     def render_function_spec(self) -> str:
         return f"""- {self.openai_function_spec["function"]["name"]}
     - description: {self.openai_function_spec["function"]["description"]}
+    - parameters: {self.parameters_spec}
     - inputs: {self.openai_function_spec["function"]["parameters"]}
 """
 
@@ -76,8 +79,19 @@ class WorkflowStep(BaseModel):
         return v
 
     @property
-    def env_vars(self) -> dict[str, Any]:
-        return {p.name: p.value for p in self.parameters}
+    def env_vars(self) -> dict[str, str]:
+        d = {}
+        if self.tool.default_parameters:
+            # get default parameters
+            d.update(self.tool.default_parameters)
+        if 'params' in d and isinstance(d['params'], dict):
+            del d['params']
+            # replace with nested parameters
+            # d['params'] = ",".join([f"{p.name}=\"{p.value}\"" for p in self.parameters])
+            d.update({f"params__{p.name}": p.value for p in self.parameters})
+        else:
+            d.update({p.name: p.value for p in self.parameters})
+        return d
 
     @property
     def args(self) -> dict[str, Any]:
@@ -117,6 +131,13 @@ class AgentModel(BaseModel):
     description: str
     version: str
 
+    @computed_field
+    @property
+    def endpoint(self) -> str:
+        # TODO: Change this to the most appropriate way via route mapping from ai registry
+        return f"http://{self.name}-serve-svc.pantheon:8000"
+        # return "http://localhost:8000"
+
 
 class GoalModel(BaseModel):
     goal: str = Field(..., description="Goal to reach")
@@ -141,3 +162,10 @@ class QueryData(BaseModel):
 
 class InsightModel(BaseModel):
     domain_knowledge: str = Field(..., description="Insight from the private domain knowledge")
+
+
+class HandoffParamsModel(BaseModel):
+    endpoint: str = Field(..., description="Endpoint to hand off to")
+    path: str = Field(default="/{goal}", description="Path to append to the endpoint")
+    method: str = Field("POST", description="HTTP method to use for the request")
+    params: dict[str, Any] = Field(default_factory=dict, description="Parameters to pass in the request")

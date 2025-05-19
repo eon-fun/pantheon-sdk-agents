@@ -5,7 +5,7 @@ import yaml
 from langchain.agents.agent import AgentOutputParser
 from langchain.schema import OutputParserException
 
-from base_agent.models import InputItem, OutputItem, ToolModel, Workflow, WorkflowStep
+from base_agent.models import InputItem, OutputItem, ParameterItem, ToolModel, Workflow, WorkflowStep
 
 THOUGHT_PATTERN = r"Thought: ([^\n]*)"
 ACTION_PATTERN = r"\n*(\d+)\. (\w+)\((.*)\)(\s*#\w+\n)?"
@@ -79,10 +79,8 @@ class AgentOutputPlanParser(AgentOutputParser, extra="allow"):
                         # should pick only the defined tools
                         tool=_find_tool(step.get("tool", ""), self.tools),
                         thought=step.get("thought", ""),
-                        inputs=[
-                            InputItem(name=input_item.get("name", ""), value=input_item.get("value", ""))
-                            for input_item in step.get("inputs", [])
-                        ],
+                        parameters=self._parse_parameters(step.get("parameters", [])),
+                        inputs=self._parse_inputs(step.get("inputs", [])),
                         outputs=[
                             OutputItem(name=output_item.get("name", ""), value=output_item.get("value", None))
                             for output_item in step.get("outputs", [])
@@ -102,6 +100,25 @@ class AgentOutputPlanParser(AgentOutputParser, extra="allow"):
             raise OutputParserException(f"Failed to parse YAML content: {e}") from e
         except Exception as e:
             raise OutputParserException(f"Failed to parse workflow: {e}") from e
+
+    def _parse_parameters(self, params: list | dict) -> list:
+        if isinstance(params, dict):
+            return [ParameterItem(name=name, value=value) for name, value in params.items()]
+        else:
+            return [
+                ParameterItem(name=input_item.get("name", ""), value=input_item.get("value", ""))
+                for input_item in params
+            ]
+
+    def _parse_inputs(self, inputs: list | dict) -> list:
+        if isinstance(inputs, dict):
+            return [InputItem(name=name, value=value) for name, value in inputs.items()]
+        else:
+            return [
+                InputItem(name=input_item.get("name", ""), value=input_item.get("value", ""))
+                for input_item in inputs
+            ]
+
 
 ### Helper functions
 

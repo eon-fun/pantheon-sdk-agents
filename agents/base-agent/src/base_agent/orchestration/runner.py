@@ -61,9 +61,11 @@ class DAGRunner(abc.AbstractWorkflowRunner):
     def create_step(self, step: WorkflowStep):
         """Creates a remote function for a step"""
 
+        runtime_env = RuntimeEnv(pip=[step.tool.render_pip_dependency()], env_vars=step.env_vars)
+
         @ray.workflow.options(checkpoint=True)
         @ray.remote(
-            runtime_env=RuntimeEnv(pip=[step.tool.render_pip_dependency()], env_vars=step.env_vars),
+            runtime_env=runtime_env,
             max_retries=self.config.WORKFLOW_STEP_MAX_RETRIES,
             retry_exceptions=True,
         )
@@ -73,8 +75,9 @@ class DAGRunner(abc.AbstractWorkflowRunner):
                 tool = entry_points[step.tool.package_name].load()
             except KeyError as exc:
                 raise ValueError(f"Tool {step.tool.package_name} not found in entry points") from exc
-
-            return workflow.continuation(tool.bind(*args, **kwargs))
+            return workflow.continuation(
+                tool.options(runtime_env=RuntimeEnv(env_vars=step.env_vars)).bind(*args, **kwargs)
+            )
 
         return get_tool_entrypoint_wrapper, step.args
 
