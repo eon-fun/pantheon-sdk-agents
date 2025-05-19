@@ -1,7 +1,6 @@
 from typing import Any
 
 from base_agent.const import EntrypointGroup
-from base_agent.models import Workflow
 from base_agent.utils import get_entrypoint
 from ray import serve
 
@@ -22,7 +21,7 @@ if __name__ == "__main__":
         return await handle.get_card.remote()
 
     @app.post("/{goal}")
-    async def handle_request(goal: str, plan: Workflow | None = None, context: Any = None):
+    async def handle_request(goal: str, plan: dict | None = None, context: Any = None):
         return await handle.handle.remote(goal, plan, context)
 
     @app.get("/workflows")
@@ -30,4 +29,4 @@ if __name__ == "__main__":
         return await handle.list_workflows.remote(status)
 
     # Run uvicorn server
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
@@ -62,8 +62,8 @@ class OutputItem(BaseModel):
 class WorkflowStep(BaseModel):
     name: str
     tool: ToolModel
-    thought: Optional[str] = None
-    observation: Optional[str] = None
+    thought: str | None = None
+    observation: str | None = None
     parameters: list[ParameterItem] = Field(default_factory=list)
     inputs: list[InputItem] = Field(default_factory=list)
     outputs: list[OutputItem] = Field(default_factory=list)
@@ -84,8 +84,8 @@ class WorkflowStep(BaseModel):
         if self.tool.default_parameters:
             # get default parameters
             d.update(self.tool.default_parameters)
-        if 'params' in d and isinstance(d['params'], dict):
-            del d['params']
+        if "params" in d and isinstance(d["params"], dict):
+            del d["params"]
             # replace with nested parameters
             # d['params'] = ",".join([f"{p.name}=\"{p.value}\"" for p in self.parameters])
             d.update({f"params__{p.name}": p.value for p in self.parameters})
@@ -97,13 +97,13 @@ class WorkflowStep(BaseModel):
     def args(self) -> dict[str, Any]:
         return {a.name: a.value for a in self.inputs}
 
-    def get_thought_action_observation(self, include_action=True, include_thought=True) -> str:
+    def get_thought_action_observation(self, *, include_action: bool = True, include_thought: bool = True) -> str:
         thought_action_observation = ""
         if self.thought and include_thought:
             thought_action_observation = f"Thought: {self.thought}\n"
         if include_action:
             tool_args = {inp.name: inp.value for inp in self.inputs}
-            thought_action_observation += f"{self.name}{tool_args}\n"
+            thought_action_observation += f"{self.name}({tool_args})\n"
         if self.observation is not None:
             thought_action_observation += f"Observation: {self.observation}\n"
         return thought_action_observation
@@ -113,7 +113,7 @@ class Workflow(BaseModel):
     id: str = Field(default_factory=lambda x: f"dag-{uuid.uuid4().hex[:8]}")
     name: str
     description: str
-    thought: Optional[str] = None
+    thought: str | None = None
     parameters: list[Any] = Field(default_factory=list)
     steps: list[WorkflowStep]
     outputs: list[OutputItem] = Field(default_factory=list)

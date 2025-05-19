@@ -115,18 +115,16 @@ class AbstractWorkflowRunner(ABC):
 
     @abstractmethod
     async def list_workflows(self, *args, **kwargs) -> None:
-        """List all workflows in the workflow runner engine."""
-        pass
+         """List all workflows in the workflow runner engine."""
+         pass
 
     @abstractmethod
     def reconfigure(self, config: dict[str, Any]) -> None:
         """Reconfigure the agent with new settings.
-
         Args:
             config: New configuration settings
         """
         pass
-
 
 class AbstractAgent(ABC):
     """Abstract base class for agent implementations."""

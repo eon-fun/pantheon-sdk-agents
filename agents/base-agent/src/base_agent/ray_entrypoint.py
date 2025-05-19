@@ -84,11 +84,10 @@ class BaseAgent(abc.AbstractAgent):
 
         result = self.run_workflow(plan, context)
         self.store_interaction(goal, plan, result, context)
-        # return result
+        return result
 
     def get_past_interactions(self, goal: str) -> list[dict]:
         return self.memory_client.read(key=goal)
-        # return [{}]
 
     def store_interaction(
         self,
@@ -109,9 +108,15 @@ class BaseAgent(abc.AbstractAgent):
 
     def get_relevant_insights(self, goal: str) -> list[InsightModel]:
         """Retrieve relevant insights from LightRAG memory for the given goal."""
-        response = self.lightrag_client.query(query=goal)
-        return [InsightModel(**response)]
-        # return []
+        response = self.lightrag_client.post(
+            endpoint=self.lightrag_client.endpoints.query,
+            json={
+                "query": goal,
+                "mode": "naive",
+            },
+        )
+        texts = response.get("texts", [])
+        return [InsightModel(domain_knowledge=text["text"]) for text in texts if "text" in text]
 
     def get_most_relevant_agents(self, goal: str) -> list[AgentModel]:
         """This method is used to find the most useful agents for the given goal."""
@@ -237,7 +242,7 @@ class BaseAgent(abc.AbstractAgent):
         return self.workflow_runner.run(plan, context)
 
     def reconfigure(self, config: dict[str, Any]):
-        self.workflow_runner.reconfigure(config)
+        pass
 
     async def handoff(self, endpoint: str, goal: str, plan: dict):
         """This method means that agent can't find a solution (wrong route/wrong plan/etc)

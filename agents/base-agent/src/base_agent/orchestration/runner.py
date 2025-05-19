@@ -25,7 +25,6 @@ class DAGRunner(abc.AbstractWorkflowRunner):
 
     def reconfigure(self, config: dict[str, Any]) -> None:
         """Reconfigure the agent with new settings.
-
         Args:
             config: New configuration settings
         """

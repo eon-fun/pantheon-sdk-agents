@@ -1,5 +1,6 @@
 import re
 from collections.abc import Sequence
+from enum import StrEnum
 
 import yaml
 from langchain.agents.agent import AgentOutputParser
@@ -7,18 +8,17 @@ from langchain.schema import OutputParserException
 
 from base_agent.models import InputItem, OutputItem, ParameterItem, ToolModel, Workflow, WorkflowStep
 
-THOUGHT_PATTERN = r"Thought: ([^\n]*)"
-ACTION_PATTERN = r"\n*(\d+)\. (\w+)\((.*)\)(\s*#\w+\n)?"
-# $1 or ${1} -> 1
-ID_PATTERN = r"\$\{?(\d+)\}?"
-# Pattern to extract YAML content between ```yaml and ``` markers
-YAML_PATTERN = r"```yaml\s+(.*?)\s+```"
-# Pattern for template expressions like {{steps.step-name.outputs.output-name}}
-TEMPLATE_EXPR_PATTERN = r"\{\{(.*?)\}\}"
+
+class RegexPattern(StrEnum):
+    THOUGHT = r"Thought: ([^\n]*)"
+    ACTION = r"\n*(\d+)\. (\w+)\((.*)\)(\s*#\w+\n)?"
+    ID = r"\$\{?(\d+)\}?"
+    YAML_BLOCK = r"```yaml\s+(.*?)\s+```"
+    TEMPLATE_EXPR = r"\{\{(.*?)\}\}"
 
 
 def default_dependency_rule(idx, args: str):
-    matches = re.findall(ID_PATTERN, args)
+    matches = re.findall(RegexPattern.ID, args)
     numbers = [int(match) for match in matches]
     return idx in numbers
 
@@ -32,10 +32,11 @@ class AgentOutputPlanParser(AgentOutputParser, extra="allow"):
 
     def parse(self, text: str) -> Workflow:
         # First try to extract YAML content
-        yaml_match = re.search(YAML_PATTERN, text, re.DOTALL)
+        yaml_match = re.search(RegexPattern.YAML_PATTERN, text, re.DOTALL)
         if not yaml_match:
             raise OutputParserException(f"Failed to parse YAML content from text: {text}")
 
+        # If no YAML format found, fall back to the original parsing logic
         return self._parse_yaml_format(yaml_match.group(1))
 
     def _parse_yaml_format(self, yaml_content: str) -> Workflow:
@@ -93,13 +94,11 @@ class AgentOutputPlanParser(AgentOutputParser, extra="allow"):
                     for output_item in workflow_data.get("outputs", [])
                 ],
             )
-
             return workflow
 
         except yaml.YAMLError as e:
             raise OutputParserException(f"Failed to parse YAML content: {e}") from e
-        except Exception as e:
-            raise OutputParserException(f"Failed to parse workflow: {e}") from e
+
 
     def _parse_parameters(self, params: list | dict) -> list:
         if isinstance(params, dict):
