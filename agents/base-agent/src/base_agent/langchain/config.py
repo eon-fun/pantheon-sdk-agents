@@ -24,7 +24,7 @@ class BaseLLMProviderConfig(BaseSettings):
 
 # OpenAI provider configuration
 class OpenAIConfig(BaseLLMProviderConfig):
-    api_key: SecretStr | None = None
+    api_key: SecretStr | None
     model: str = "gpt-4o"
 
 

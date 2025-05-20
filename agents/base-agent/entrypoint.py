@@ -1,6 +1,7 @@
 from typing import Any
 
 from base_agent.const import EntrypointGroup
+from base_agent.models import ChatRequest
 from base_agent.utils import get_entrypoint
 from ray import serve
 
@@ -15,6 +16,12 @@ if __name__ == "__main__":
     handle = serve.run(app({}), route_prefix="/", _local_testing_mode=True)
 
     app = FastAPI()
+
+
+    @app.post("/chat")
+    async def chat_with_agent(payload: ChatRequest):
+        return await handle.chat.remote(payload.message, payload.action, payload.session_uuid)
+
 
     @app.get("/card")
     async def get_card():

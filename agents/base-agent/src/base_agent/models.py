@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
@@ -43,6 +44,7 @@ class ToolModel(BaseModel):
     - parameters: {self.parameters_spec}
     - inputs: {self.openai_function_spec["function"]["parameters"]}
 """
+    
 
 
 class ParameterItem(BaseModel):
@@ -117,6 +119,36 @@ class Workflow(BaseModel):
     parameters: list[Any] = Field(default_factory=list)
     steps: list[WorkflowStep]
     outputs: list[OutputItem] = Field(default_factory=list)
+
+class ChatRequest(BaseModel):
+    message: str
+    action: str | None = None
+    session_uuid: str | None = None
+
+class ChatMessageModel(BaseModel):
+    role: str = Field(..., description="Sender role: 'user' or 'assistant'")
+    content: str = Field(..., description="Message content")
+    timestamp: datetime | None = Field(default_factory=datetime.utcnow, description="Message timestamp")
+
+
+class ChatContextModel(BaseModel):
+    uuid: str = Field(..., description="Unique chat/session UUID")
+    history: list[ChatMessageModel] = Field(default_factory=list, description="Chronological chat messages")
+
+class ChatRequest(BaseModel):
+    message: str
+    action: str | None = None
+    session_uuid: str | None = None
+
+class ChatMessageModel(BaseModel):
+    role: str = Field(..., description="Sender role: 'user' or 'assistant'")
+    content: str = Field(..., description="Message content")
+    timestamp: datetime | None = Field(default_factory=datetime.utcnow, description="Message timestamp")
+
+
+class ChatContextModel(BaseModel):
+    uuid: str = Field(..., description="Unique chat/session UUID")
+    history: list[ChatMessageModel] = Field(default_factory=list, description="Chronological chat messages")
 
 
 class MemoryModel(BaseModel):
