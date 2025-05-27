@@ -8,7 +8,7 @@ on:
       - "hotfix/**"
       - "release/**"
     paths:
-      - "relay_service/**"
+      - "relay-service/**"
   pull_request:
     types: [opened, reopened]
 
@@ -19,7 +19,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: relay_service
+        working-directory: relay-service
 
     steps:
       - name: Checkout repository
