@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  relay:
+    build: .
+    image: relay:dev
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8080:8080"    # REST API
+      - "9000:9000"    # CircuitV2 relay TCP
+    depends_on:
+      - redis
+
+  # Optional: Uncomment to run a py-libp2p client container for e2e
+  # p2pclient:
+  #   build: ./p2pclient
+  #   environment:
+  #     - RELAY_API=http://relay:8080
+  #     - RELAY_TCP_HOST=relay
+  #     - RELAY_TCP_PORT=9000
+  #   depends_on:
+  #     - relay
+  #   entrypoint: ["python", "client.py"]
