@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   redis:
     image: redis:latest
@@ -8,11 +7,19 @@ services:
   relay:
     build: .
     image: relay:dev
-    environment:
-      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
     ports:
-      - "8080:8080"    # REST API
+      - "8000:8000"    # REST API
       - "9000:9000"    # CircuitV2 relay TCP
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+
     depends_on:
       - redis
 

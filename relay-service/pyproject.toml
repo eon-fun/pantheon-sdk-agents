@@ -75,7 +75,6 @@ dependencies = [
 ]
 
 [tool.poetry.dependencies]
-libp2p = { path = "./py-libp2p", develop = true }
 
 
 [tool.poetry]

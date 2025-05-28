@@ -2,9 +2,8 @@
 set -e
 
 function run_app() {
-  wait_for_postgres
   echo "Starting main application..."
-  if ! uvicorn app:app --host 0.0.0.0 --port 8000; then
+  if ! uvicorn relay_service.app:app --host 0.0.0.0 --port 8000; then
     echo "Application failed. Sleeping for 6 mins to allow debugging..."
     sleep 360
     exit 1

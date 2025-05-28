@@ -16,13 +16,18 @@ RUN poetry export -f requirements.txt --without-hashes --output requirements.txt
 ####### Final Stage ###########
 FROM ${BASE_IMAGE}
 
-RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y git postgresql-client && rm -rf /var/lib/apt/lists/*
 
 ARG PIP_EXTRA_INDEX_URL
 ENV PIP_EXTRA_INDEX_URL=${PIP_EXTRA_INDEX_URL}
 
 COPY --from=builder /build/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r ./requirements.txt && rm ./requirements.txt
+
+RUN git clone --single-branch --branch feat/587-circuit-relay https://github.com/Winter-Soren/py-libp2p.git /py-libp2p
+
+# Install it in editable (dev) mode
+RUN pip install -e /py-libp2p
 
 ENV PIP_EXTRA_INDEX_URL=
 

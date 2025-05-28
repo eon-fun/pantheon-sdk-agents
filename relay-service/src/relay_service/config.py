@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "local"
     SERVICE_NAME: str = "relay-service"
     API_KEY: SecretStr = SecretStr("")
+    log_level: str = "INFO"
     DEBUG: bool = False
     redis: Redis = Redis()  # type: ignore
     relay: Relay = Relay()  # type: ignore
