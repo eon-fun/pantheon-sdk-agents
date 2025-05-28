@@ -42,8 +42,8 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Install py-libp2p fork
-        run: pip install -e ../py-libp2p
+      - name: Install py-libp2p fork (inside Poetry env)
+        run: poetry run pip install -e ../py-libp2p
 
       - name: Run tests via Makefile    
         run: poetry run make test
