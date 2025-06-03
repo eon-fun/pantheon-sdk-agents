@@ -160,7 +160,7 @@ class AbstractWorkflowRunner(ABC):
     """Abstract interface for workflow execution engines."""
 
     @abstractmethod
-    def run(
+    async def run(
         self,
         plan: Workflow,
         context: AbstractAgentInputModel | None = None,
@@ -278,7 +278,7 @@ class AbstractAgent(ABC):
         pass
 
     @abstractmethod
-    def run_workflow(self, plan: Workflow) -> Any:
+    async def run_workflow(self, plan: Workflow) -> Any:
         """Execute a workflow plan.
 
         Args:

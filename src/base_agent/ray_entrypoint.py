@@ -65,7 +65,7 @@ class BaseAgent(abc.AbstractAgent):
         Otherwise, it follows the standard logic to generate a plan and execute it.
         """
         if plan:
-            result = self.run_workflow(plan, context)
+            result = await self.run_workflow(plan, context)
             self.store_interaction(goal, plan, result, context)
             return result
 
@@ -82,7 +82,7 @@ class BaseAgent(abc.AbstractAgent):
             past_interactions=past_interactions,
             plan=None,
         )
-        result = self.run_workflow(plan, context)
+        result = await self.run_workflow(plan, context)
         self.store_interaction(goal, plan, result, context)
         return result
 
@@ -418,12 +418,12 @@ class BaseAgent(abc.AbstractAgent):
         self.store_chat_context(session_uuid, chat_history)
         return response
 
-    def run_workflow(
+    async def run_workflow(
         self,
         plan: Workflow,
         context: abc.BaseAgentInputModel | None = None,
     ) -> abc.BaseAgentOutputModel:
-        return self.workflow_runner.run(plan, context)
+        return await self.workflow_runner.run(plan, context)
 
     def reconfigure(self, config: dict[str, Any]):
         pass
