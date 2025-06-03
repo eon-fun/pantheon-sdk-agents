@@ -135,21 +135,6 @@ class ChatContextModel(BaseModel):
     uuid: str = Field(..., description="Unique chat/session UUID")
     history: list[ChatMessageModel] = Field(default_factory=list, description="Chronological chat messages")
 
-class ChatRequest(BaseModel):
-    message: str
-    action: str | None = None
-    session_uuid: str | None = None
-
-class ChatMessageModel(BaseModel):
-    role: str = Field(..., description="Sender role: 'user' or 'assistant'")
-    content: str = Field(..., description="Message content")
-    timestamp: datetime | None = Field(default_factory=datetime.utcnow, description="Message timestamp")
-
-
-class ChatContextModel(BaseModel):
-    uuid: str = Field(..., description="Unique chat/session UUID")
-    history: list[ChatMessageModel] = Field(default_factory=list, description="Chronological chat messages")
-
 
 class MemoryModel(BaseModel):
     goal: str
