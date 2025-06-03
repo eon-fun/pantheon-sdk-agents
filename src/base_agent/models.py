@@ -13,7 +13,8 @@ class ToolModel(BaseModel):
     openai_function_spec: dict[str, Any]
 
     @model_validator(mode="before")
-    def validate_name_and_version(cls, data):
+    @classmethod
+    def validate_name_and_version(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "version" not in data or data["version"] is None:
             # If no version is specified, we assume the latest version
             data["name"], data["version"] = cls.parse_version_from_name(data["name"])
@@ -44,7 +45,6 @@ class ToolModel(BaseModel):
     - parameters: {self.parameters_spec}
     - inputs: {self.openai_function_spec["function"]["parameters"]}
 """
-    
 
 
 class ParameterItem(BaseModel):
@@ -75,7 +75,8 @@ class WorkflowStep(BaseModel):
         return f"{self.name}: {self.tool}"
 
     @field_validator("tool", mode="before")
-    def validate_tool(cls, v):
+    @classmethod
+    def validate_tool(cls, v: Any) -> "ToolModel":
         if isinstance(v, str):
             return ToolModel(name=v, openai_function_spec={})
         return v
@@ -120,10 +121,12 @@ class Workflow(BaseModel):
     steps: list[WorkflowStep]
     outputs: list[OutputItem] = Field(default_factory=list)
 
+
 class ChatRequest(BaseModel):
     message: str
     action: str | None = None
     session_uuid: str | None = None
+
 
 class ChatMessageModel(BaseModel):
     role: str = Field(..., description="Sender role: 'user' or 'assistant'")
@@ -138,9 +141,9 @@ class ChatContextModel(BaseModel):
 
 class MemoryModel(BaseModel):
     goal: str
-    plan: dict
-    result: dict
-    context: dict | None = Field(default=None, description="Used when plan is provided")
+    plan: dict[str, Any]
+    result: dict[str, Any]
+    context: dict[str, Any] | None = Field(default=None, description="Used when plan is provided")
 
 
 class AgentModel(BaseModel):
@@ -149,9 +152,8 @@ class AgentModel(BaseModel):
     version: str
 
     @computed_field
-    @property
     def endpoint(self) -> str:
-        # TODO: Change this to the most appropriate way via route mapping from ai registry
+        # TODO(team): Change this to the most appropriate way via route mapping from ai registry  # https://github.com/project/issues/123
         return f"http://{self.name}-serve-svc.pantheon:8000"
         # return "http://localhost:8000"
 
