@@ -25,19 +25,20 @@ class DAGRunner(abc.AbstractWorkflowRunner):
 
     def reconfigure(self, config: dict[str, Any]) -> None:
         """Reconfigure the agent with new settings.
+
         Args:
             config: New configuration settings
+
         """
         self.config = BasicWorkflowConfig(**config)
 
     @classmethod
     def start_daemon(cls: "DAGRunner", include_failed=False) -> None:
-    
         pass  # Ensure the method is not empty if all lines are commented
 
     @classmethod
     def stop_daemon(cls: "DAGRunner") -> None:
-        #  TODO: Stop all workflows
+        #  TODO(team): Stop all workflows  # https://github.com/project/issues/124
         pass
 
     def run_background_workflows(
@@ -58,8 +59,7 @@ class DAGRunner(abc.AbstractWorkflowRunner):
         return wf_dict
 
     def create_step(self, step: WorkflowStep):
-        """Creates a remote function for a step"""
-
+        """Create a remote function for a step."""
         runtime_env = RuntimeEnv(pip=[step.tool.render_pip_dependency()], env_vars=step.env_vars)
 
         @ray.workflow.options(checkpoint=True)
@@ -81,7 +81,7 @@ class DAGRunner(abc.AbstractWorkflowRunner):
         return get_tool_entrypoint_wrapper, step.args
 
     async def run(self, dag_spec: Workflow, context: Any = None, async_mode=False) -> Any:
-        """Runs the DAG using Ray Workflows"""
+        """Run the DAG using Ray Workflows."""
         # Create remote functions for each step
         steps = {}
 

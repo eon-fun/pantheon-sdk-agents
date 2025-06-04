@@ -1,9 +1,10 @@
 from typing import Any
 
+from ray import serve
+
 from base_agent.const import EntrypointGroup
 from base_agent.models import ChatRequest
 from base_agent.utils import get_entrypoint
-from ray import serve
 
 app = get_entrypoint(EntrypointGroup.AGENT_ENTRYPOINT).load()
 
@@ -17,11 +18,9 @@ if __name__ == "__main__":
 
     app = FastAPI()
 
-
     @app.post("/chat")
     async def chat_with_agent(payload: ChatRequest):
         return await handle.chat.remote(payload.message, payload.action, payload.session_uuid)
-
 
     @app.get("/card")
     async def get_card():
