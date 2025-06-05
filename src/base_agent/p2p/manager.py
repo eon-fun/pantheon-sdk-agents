@@ -1,9 +1,10 @@
 """Isolated P2P module to avoid serialization issues."""
 
 import threading
+from typing import Any
 
-from loguru import logger
 import trio
+from loguru import logger
 
 from base_agent.p2p.config import P2PConfig, get_p2p_config
 
@@ -13,20 +14,20 @@ class P2PManager:
 
     def __init__(self, config: P2PConfig) -> None:
         self.config = config
-        self._libp2p_node = None
-        self._thread = None
-        self._running = False
-        self._shutdown_event = threading.Event()
+        self._libp2p_node: Any = None
+        self._thread: threading.Thread | None = None
+        self._running: bool = False
+        self._shutdown_event: threading.Event = threading.Event()
 
     def __getstate__(self) -> object:
         odict = self.__dict__.copy()  # get attribute dictionary
 
-        for k in ['_libp2p_node', '_thread', '_running', '_shutdown_event']:
+        for k in ["_libp2p_node", "_thread", "_running", "_shutdown_event"]:
             del odict[k]
 
         return odict
-    
-    def __setstate__(self, state):
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
         self.__dict__.update(state)
         self._libp2p_node = None
         self._thread = None
@@ -34,12 +35,12 @@ class P2PManager:
         self._shutdown_event = threading.Event()
 
     @property
-    def node(self):
+    def node(self) -> Any:
         if self._libp2p_node is not None:
             return self._libp2p_node
         raise RuntimeError("libp2p node is not initialized yet. Call start()")
 
-    def _run_in_thread(self):
+    def _run_in_thread(self) -> None:
         """Run the P2P node in a separate thread using Trio."""
         try:
             # Run the Trio event loop in this thread
@@ -90,11 +91,11 @@ class P2PManager:
 
         self._running = True
         self._shutdown_event.clear()
-        
+
         # Create and start the thread
         self._thread = threading.Thread(target=self._run_in_thread, daemon=True)
         self._thread.start()
-        
+
         logger.info("P2P manager started in separate thread")
 
     async def shutdown(self):
@@ -102,13 +103,13 @@ class P2PManager:
         if not self._running:
             logger.warning("P2P manager is not running")
             return
-            
+
         logger.info("Shutting down P2P manager...")
         self._shutdown_event.set()
-        
+
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=10)  # Wait up to 10 seconds for thread to exit
-            
+
         self._libp2p_node = None
         self._running = False
         logger.info("P2P shutdown completed.")
