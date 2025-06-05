@@ -118,3 +118,9 @@ cython_debug/
 
 .cursorignore
 .cursorindexingignore
+
+# Pyre stuff:
+.vscode/
+
+# P2P stuff:
+keys/
