@@ -10,4 +10,4 @@ def p2p_builder():
     init_keystore(get_p2p_config().keystore_path)
 
     # load p2p entrypoint
-    return get_entrypoint(EntrypointGroup.P2P_ENTRYPOINT).load()() # type: ignore
+    return get_entrypoint(EntrypointGroup.P2P_ENTRYPOINT).load()()  # type: ignore

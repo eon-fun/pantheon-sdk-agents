@@ -55,17 +55,18 @@ class P2PManager:
     async def _start(self) -> None:
         """Trio-based implementation of the P2P node."""
         from multiaddr import Multiaddr
+
         from base_agent.p2p.libp2p import LibP2PNode
-        
+
         # Create the libp2p node
         node = LibP2PNode(self.config)
         host = await node.initialize()
         self._libp2p_node = node
-        
+
         async with host.run(listen_addrs=[Multiaddr("/ip4/0.0.0.0/tcp/9001")]), trio.open_nursery() as nursery:
             # Set up the listener
             await node.setup_listener(nursery)
-            
+
             # Connect to relay and keep node running
             while not self._shutdown_event.is_set():
                 try:
