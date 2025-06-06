@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 import requests
 from ray.serve.deployment import Application
 
-from agents import abc, const
+from pantheon_sdk.agents import abc, const
 from pantheon_sdk.agents.ai_registry import ai_registry_builder
 from pantheon_sdk.agents.bootstrap import bootstrap_main
 from pantheon_sdk.agents.card.models import AgentCard

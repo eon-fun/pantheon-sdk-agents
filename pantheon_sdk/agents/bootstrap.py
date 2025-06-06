@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import FastAPI
 from ray.serve.deployment import Deployment
 
-from agents import abc
+from pantheon_sdk.agents import abc
 from pantheon_sdk.agents.card import card_builder
 from pantheon_sdk.agents.orchestration import workflow_builder
 from pantheon_sdk.agents.p2p import p2p_builder

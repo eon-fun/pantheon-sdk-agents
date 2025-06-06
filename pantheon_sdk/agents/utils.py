@@ -1,6 +1,7 @@
 from importlib.metadata import EntryPoint, entry_points
+from typing import Any
 
-from pydantic import Field, create_model
+from pydantic import BaseModel, Field, create_model
 
 from pantheon_sdk.agents.const import EntrypointGroup
 

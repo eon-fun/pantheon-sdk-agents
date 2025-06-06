@@ -5,7 +5,7 @@ import ray
 from ray import workflow
 from ray.runtime_env import RuntimeEnv
 
-from agents import abc
+from pantheon_sdk.agents import abc
 from pantheon_sdk.agents.const import EntrypointGroup
 from pantheon_sdk.agents.models import Workflow, WorkflowStep
 from pantheon_sdk.agents.orchestration.config import BasicWorkflowConfig

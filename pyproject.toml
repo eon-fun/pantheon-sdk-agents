@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{ include = "pantheon_sdk.agents" }]
+packages = [{ include = "pantheon_sdk" }]
 
 [project.entry-points."agent.executor.config"]
 basic = "pantheon_sdk.agents.langchain.config:get_langchain_config"
