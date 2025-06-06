@@ -163,7 +163,7 @@ exclude = [
     "tests/",
     "build/",
     "dist/",
-    "src/base_agent/ray_entrypoint.py",  # Много ошибок override
+    "pantheon_sdk/agents/ray_entrypoint.py",  # Много ошибок override
 ]
 
 # Отключаем самые проблемные коды ошибок
@@ -204,7 +204,7 @@ ignore_errors = true
 # Игнорируем ошибки в проблемных файлах
 [[tool.mypy.overrides]]
 module = [
-    "base_agent.ray_entrypoint",
+    "pantheon_sdk.agents.ray_entrypoint",
     "ray_entrypoint",
 ]
 ignore_errors = true
