@@ -29,7 +29,7 @@ RUN pip install --no-cache-dir -r ./requirements.txt && \
     rm ./requirements.txt
 
 # Set the environment variables
-ENV PIP_EXTRA_INDEX_URL="https://packages.pypi.pntheon.ai/simple/ https://tools.pypi.pntheon.ai/simple/"
+ENV PIP_EXTRA_INDEX_URL="https://packages.pypi.pntheon.ai/simple/ https://agents.pypi.pntheon.ai/simple/ https://tools.pypi.pntheon.ai/simple/"
 
 WORKDIR /serve_app
 
