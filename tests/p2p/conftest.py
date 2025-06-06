@@ -1,7 +1,7 @@
 import pytest
 
-from base_agent.p2p.config import P2PConfig
-from base_agent.p2p.manager import P2PManager
+from pantheon_sdk.agents.p2p.config import P2PConfig
+from pantheon_sdk.agents.p2p.manager import P2PManager
 
 
 @pytest.fixture
