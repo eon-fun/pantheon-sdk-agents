@@ -1,20 +1,20 @@
 # This file defines code owners for the PanthEON SDK Agents repository
 # Code owners are automatically requested for review when someone opens a PR
 
-* @golemxiv @k1llzz @polkadot21
+* @GolemXlV @k1llzz @polkadot21
 
-/docs/ @polkadot21 @k1llzz
-*.md @polkadot21 @k1llzz
-/README.md @polkadot21 @k1llzz
+/docs/ @GolemXlV @polkadot21 @k1llzz
+*.md @GolemXlV @polkadot21 @k1llzz
+/README.md @GolemXlV @polkadot21 @k1llzz
 
-/pyproject.toml @golemxiv @drobotukhin
-/poetry.lock @golemxiv @drobotukhin
-/.github/ @golemxiv @drobotukhin
+/pyproject.toml @GolemXlV @mrvladd-d
+/poetry.lock @GolemXlV @mrvladd-d
+/.github/ @GolemXlV @mrvladd-d
 
-/src/ @golemxiv @k1llzz
-/base-agent/ @golemxiv @k1llzz
-/tests/ @golemxiv @k1llzz
+/tests/ @GolemXlV @k1llzz
 
-/.github/workflows/ @golemxiv @drobotukhin
+/pantheon_sdk/ @GolemXlV @k1llzz @mrvladd-d
 
-/LICENSE @golemxiv @k1llzz @polkadot21 @drobotukhin
+/.github/workflows/ @GolemXlV @mrvladd-d
+
+/LICENSE @GolemXlV @k1llzz @polkadot21 @mrvladd-d
