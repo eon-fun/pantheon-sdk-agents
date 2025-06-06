@@ -1,4 +1,4 @@
-name: Release python agent
+name: Release pantheon-sdk-agents
 
 on:
   workflow_dispatch:
