@@ -20,7 +20,7 @@ class P2PManager:
         self._shutdown_event: threading.Event = threading.Event()
 
     def __getstate__(self) -> object:
-        odict = self.__dict__.copy()  # get attribute dictionary
+        odict = self.__dict__.copy()
 
         for k in ["_libp2p_node", "_thread", "_running", "_shutdown_event"]:
             del odict[k]
@@ -43,7 +43,6 @@ class P2PManager:
     def _run_in_thread(self) -> None:
         """Run the P2P node in a separate thread using Trio."""
         try:
-            # Run the Trio event loop in this thread
             trio.run(self._start)
         except Exception as e:
             logger.error(f"Error in P2P thread: {e}")
@@ -58,25 +57,20 @@ class P2PManager:
 
         from pantheon_sdk.agents.p2p.libp2p import LibP2PNode
 
-        # Create the libp2p node
         node = LibP2PNode(self.config)
         host = await node.initialize()
         self._libp2p_node = node
 
         async with host.run(listen_addrs=[Multiaddr("/ip4/0.0.0.0/tcp/9001")]), trio.open_nursery() as nursery:
-            # Set up the listener
             await node.setup_listener(nursery)
 
-            # Connect to relay and keep node running
             while not self._shutdown_event.is_set():
                 try:
-                    # Connect to the relay node
                     success = await node.connect_to_relay()
                     if not success:
                         await trio.sleep(10)
                         continue
 
-                    # Keep checking if we should shut down
                     while not self._shutdown_event.is_set():
                         await trio.sleep(10)
 
@@ -93,7 +87,6 @@ class P2PManager:
         self._running = True
         self._shutdown_event.clear()
 
-        # Create and start the thread
         self._thread = threading.Thread(target=self._run_in_thread, daemon=True)
         self._thread.start()
 
@@ -109,11 +102,27 @@ class P2PManager:
         self._shutdown_event.set()
 
         if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=10)  # Wait up to 10 seconds for thread to exit
+            self._thread.join(timeout=10)
 
         self._libp2p_node = None
         self._running = False
         logger.info("P2P shutdown completed.")
+
+    async def delegate(self, target_peer_id: str, payload: dict) -> dict:
+        logger.info("--- MOCK  ---")
+        logger.info(f"Target Peer ID: {target_peer_id}")
+        logger.info(f"Payload: {payload}")
+
+        mock_response = {
+            "status": "success",
+            "result": f"Mock response for goal '{payload.get('goal')}' from peer {target_peer_id}",
+            "executed_by": target_peer_id,
+            "mock": True,
+        }
+
+        logger.info(f"Mock Response: {mock_response}")
+
+        return mock_response
 
 
 def get_p2p_manager() -> P2PManager:
